@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Assistant</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .main-interface {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .input-section {
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            padding: 30px;
+            background: white;
+        }
+        
+        .result-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .confidence-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        .code-block code {
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .suggestions-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .suggestions-list li {
+            background: #e3f2fd;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 20px;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function AICodeAssistant() {
+            const [query, setQuery] = useState('');
+            const [language, setLanguage] = useState('vb.net');
+            const [taskType, setTaskType] = useState('generate');
+            const [context, setContext] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [error, setError] = useState('');
+
+            const API_BASE_URL = '/api';
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!query.trim()) return;
+
+                setLoading(true);
+                setError('');
+                setResult(null);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/${taskType}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query: query,
+                            language: language,
+                            context: context,
+                            task_type: taskType
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    setResult(data);
+                } catch (err) {
+                    setError(`Failed to process request: ${err.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const getConfidenceColor = (confidence) => {
+                if (confidence >= 0.8) return '#28a745';
+                if (confidence >= 0.6) return '#ffc107';
+                return '#dc3545';
+            };
+
+            const taskTypeLabels = {
+                generate: 'Generate Code',
+                debug: 'Debug Code',
+                explain: 'Explain Code',
+                optimize: 'Optimize Code'
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🤖 AI Code Assistant</h1>
+                        <p>Powered by Gemini AI with RAG & Agentic Architecture</p>
+                    </div>
+
+                    <div className="main-interface">
+                        <div className="input-section">
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-group">
+                                    <label htmlFor="query">Describe what you need:</label>
+                                    <textarea
+                                        id="query"
+                                        className="form-control"
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        placeholder="e.g., Create a VB.NET function to calculate compound interest, or paste code that needs debugging..."
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label htmlFor="language">Programming Language:</label>
+                                        <select
+                                            id="language"
+                                            className="form-control"
+                                            value={language}
+                                            onChange={(e) => setLanguage(e.target.value)}
+                                        >
+                                            <option value="vb.net">VB.NET</option>
+                                            <option value="csharp">C#</option>
+                                            <option value="python">Python</option>
+                                            <option value="javascript">JavaScript</option>
+                                            <option value="sql">SQL</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor="taskType">Task Type:</label>
+                                        <select
+                                            id="taskType"
+                                            className="form-control"
+                                            value={taskType}
+                                            onChange={(e) => setTaskType(e.target.value)}
+                                        >
+                                            <option value="generate">Generate Code</option>
+                                            <option value="debug">Debug Code</option>
+                                            <option value="explain">Explain Code</option>
+                                            <option value="optimize">Optimize Code</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="context">Additional Context (Optional):</label>
+                                    <textarea
+                                        id="context"
+                                        className="form-control"
+                                        value={context}
+                                        onChange={(e) => setContext(e.target.value)}
+                                        placeholder="Provide any additional context, requirements, or constraints..."
+                                        style={{minHeight: '80px'}}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={loading || !query.trim()}
+                                >
+                                    {loading && <span className="loading"></span>}
+                                    {loading ? 'Processing...' : taskTypeLabels[taskType]}
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="results-section">
+                            {error && (
+                                <div className="error-message">
+                                    <strong>Error:</strong> {error}
+                                </div>
+                            )}
+
+                            {result && (
+                                <div className="result-card">
+                                    <div className="result-header">
+                                        <h3 className="result-title">Generated Result</h3>
+                                        <span
+                                            className="confidence-badge"
+                                            style={{backgroundColor: getConfidenceColor(result.confidence)}}
+                                        >
+                                            {Math.round(result.confidence * 100)}% Confidence
+                                        </span>
+                                    </div>
+
+                                    {result.code && (
+                                        <div>
+                                            <h4>Code:</h4>
+                                            <div className="code-block">
+                                                <pre><code>{result.code}</code></pre>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {result.explanation && (
+                                        <div>
+                                            <h4>Explanation:</h4>
+                                            <p>{result.explanation}</p>
+                                        </div>
+                                    )}
+
+                                    {result.suggestions && result.suggestions.length > 0 && (
+                                        <div>
+                                            <h4>Suggestions:</h4>
+                                            <ul className="suggestions-list">
+                                                {result.suggestions.map((suggestion, index) => (
+                                                    <li key={index}>{suggestion}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<AICodeAssistant />, document.getElementById('root'));
+    </script>
+</body>
+</html>
